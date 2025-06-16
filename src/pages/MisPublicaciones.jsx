@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { obtenerAutos } from "../utils/localStorage";
 import AutoCard from "../components/AutoCard";
+import { useAuth } from "../context/AuthContext";
 
 export default function MisPublicaciones() {
+  const { usuario } = useAuth();
   const [autos, setAutos] = useState([]);
 
   useEffect(() => {
-    setAutos(obtenerAutos());
-  }, []);
+    const todos = obtenerAutos();
+    const mios = todos.filter((a) => a.publicadoPor === usuario?.email);
+    setAutos(mios);
+  }, [usuario]);
 
   const eliminar = (id) => {
-    const nuevos = autos.filter((a) => a.id !== id);
-    localStorage.setItem("autosCargo", JSON.stringify(nuevos));
-    setAutos(nuevos);
+    const restantes = obtenerAutos().filter((a) => a.id !== id);
+    localStorage.setItem("autosCargo", JSON.stringify(restantes));
+    setAutos(restantes.filter((a) => a.publicadoPor === usuario?.email));
   };
 
   return (
@@ -20,7 +24,7 @@ export default function MisPublicaciones() {
       <h1 className="mb-6 text-2xl font-bold">Mis Publicaciones</h1>
 
       {autos.length === 0 ? (
-        <p className="text-gray-500">Todavía no publicaste ningún auto.</p>
+        <p className="text-gray-500">Aún no publicaste ningún auto.</p>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
           {autos.map((auto) => (

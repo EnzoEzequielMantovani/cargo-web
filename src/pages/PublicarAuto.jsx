@@ -1,6 +1,10 @@
 import React, { useState } from "react";
+import { guardarAuto } from "../utils/localStorage";
+import { useAuth } from "../context/AuthContext";
 
 export default function PublicarAuto() {
+  const { usuario } = useAuth();
+
   const [form, setForm] = useState({
     marca: "",
     modelo: "",
@@ -24,32 +28,27 @@ export default function PublicarAuto() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const camposObligatorios = ["marca", "modelo", "anio", "pais", "precio", "imagen"];
-    const incompleto = camposObligatorios.some((campo) => !form[campo]);
+    const campos = ["marca", "modelo", "anio", "pais", "precio", "imagen"];
+    const incompleto = campos.some((campo) => !form[campo]);
 
     if (incompleto) {
       setMensaje("Por favor, completá todos los campos obligatorios.");
       return;
     }
 
-    // Generar un nuevo ID único (timestamp)
     const nuevoAuto = {
       ...form,
-      id: Date.now(), // ID único
+      id: Date.now(),
       precio: Number(form.precio),
       anio: Number(form.anio),
-      kilometros: Math.floor(Math.random() * 50000 + 10000), // ejemplo
+      kilometros: Math.floor(Math.random() * 50000 + 10000),
       combustible: "Nafta",
       transmision: "Automática",
       tipo: "otro",
-      pais: form.pais,
+      publicadoPor: usuario?.email || "desconocido",
     };
 
-    // Guardar en localStorage
-    const existentes = JSON.parse(localStorage.getItem("autosCargo")) || [];
-    const actualizados = [...existentes, nuevoAuto];
-    localStorage.setItem("autosCargo", JSON.stringify(actualizados));
+    guardarAuto(nuevoAuto);
 
     setMensaje("Auto publicado con éxito!");
     setForm({
@@ -69,9 +68,7 @@ export default function PublicarAuto() {
       <h1 className="mb-6 text-3xl font-bold text-center">Publicar Auto</h1>
 
       {mensaje && (
-        <div className="p-3 mb-4 text-green-700 bg-green-100 rounded">
-          {mensaje}
-        </div>
+        <div className="p-3 mb-4 text-green-700 bg-green-100 rounded">{mensaje}</div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">

@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilo base para el sitio */
+body {
+  @apply text-gray-800 bg-white;
+}

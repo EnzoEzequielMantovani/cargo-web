@@ -1,66 +1,69 @@
 import React, { useEffect, useState } from "react";
-import { obtenerCarrito, quitarDelCarrito, vaciarCarrito } from "../utils/carrito";
-import AutoCard from "../components/AutoCard";
+import { auth } from "../firebase";
 
 export default function Carrito() {
-  const [carrito, setCarrito] = useState([]);
+  const [reservas, setReservas] = useState([]);
 
   useEffect(() => {
-    setCarrito(obtenerCarrito());
+    cargarReservas();
   }, []);
 
-  const quitar = (id) => {
-    quitarDelCarrito(id);
-    setCarrito(carrito.filter((a) => a.id !== id));
+  const cargarReservas = () => {
+    const todas = JSON.parse(localStorage.getItem("reservas") || "[]");
+    const propias = todas.filter((r) => r.email === auth.currentUser?.email?.toLowerCase());
+    setReservas(propias);
   };
 
-  const totalEstimado = carrito.reduce((acc, auto) => {
-    const flete = 1800;
-    const impuestos = auto.precio * 0.35;
-    const gestion = auto.precio * 0.05;
-    return acc + auto.precio + flete + impuestos + gestion;
-  }, 0);
+  const cancelarReserva = (id) => {
+    const todas = JSON.parse(localStorage.getItem("reservas") || "[]");
+    const filtradas = todas.filter(
+      (r) => !(r.id === id && r.email === auth.currentUser.email)
+    );
+    localStorage.setItem("reservas", JSON.stringify(filtradas));
+    cargarReservas();
+  };
+
+  if (!auth.currentUser) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-lg">Iniciá sesión para ver tu carrito.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="container p-6 mx-auto">
-      <h1 className="mb-6 text-2xl font-bold">Carrito de Compra</h1>
+    <div className="max-w-4xl p-6 mx-auto mt-10">
+      <h1 className="mb-6 text-2xl font-bold">Mi Carrito</h1>
 
-      {carrito.length === 0 ? (
-        <p className="text-gray-500">No hay autos en tu carrito.</p>
+      {reservas.length === 0 ? (
+        <p className="text-gray-600">Tu carrito está vacío.</p>
       ) : (
-        <>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {carrito.map((auto) => (
-              <div key={auto.id}>
-                <AutoCard auto={auto} />
-                <button
-                  onClick={() => quitar(auto.id)}
-                  className="mt-2 text-sm text-red-600 hover:underline"
-                >
-                  Quitar del carrito
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="p-4 mt-6 bg-gray-100 rounded shadow">
-            <h2 className="mb-2 text-xl font-semibold text-blue-700">Resumen estimado</h2>
-            <p>Total aproximado por todos los autos:</p>
-            <p className="text-2xl font-bold text-green-700">USD {totalEstimado.toLocaleString()}</p>
-            <p className="mt-2 text-sm text-gray-500">
-              Incluye impuestos, flete y gestión estimada por auto.
-            </p>
-            <button
-              onClick={() => {
-                vaciarCarrito();
-                setCarrito([]);
-              }}
-              className="px-4 py-2 mt-4 text-white bg-blue-600 rounded hover:bg-blue-700"
-            >
-              Finalizar compra (simulado)
-            </button>
-          </div>
-        </>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {reservas.map((auto, index) => (
+            <div key={index} className="p-4 bg-white rounded shadow">
+              <img
+                src={auto.imagen}
+                alt={auto.modelo}
+                className="object-contain w-full h-40 mb-2"
+              />
+              <h2 className="text-lg font-semibold">
+                {auto.marca} {auto.modelo} ({auto.anio})
+              </h2>
+              <p className="mb-1 font-medium text-green-700">
+                USD {auto.precio.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500">
+                Reservado el: {new Date(auto.fecha).toLocaleDateString()}
+              </p>
+              <button
+                onClick={() => cancelarReserva(auto.id)}
+                className="px-4 py-2 mt-3 text-white bg-red-600 rounded hover:bg-red-700"
+              >
+                Cancelar reserva
+              </button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

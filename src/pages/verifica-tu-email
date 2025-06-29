@@ -1,0 +1,22 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+
+export default function VerificaCorreo() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="max-w-md p-6 mx-auto mt-20 bg-yellow-100 rounded shadow text-center">
+      <h1 className="text-2xl font-bold text-yellow-700 mb-4">⚠️ Verificación requerida</h1>
+      <p className="text-gray-700 mb-4">
+        Necesitás verificar tu correo para acceder a esta sección.
+        Revisa tu bandeja de entrada o spam y hacé clic en el enlace de verificación.
+      </p>
+      <button
+        onClick={() => navigate("/")}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Volver al inicio
+      </button>
+    </div>
+  );
+}

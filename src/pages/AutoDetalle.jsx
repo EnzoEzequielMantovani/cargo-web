@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import autosMock from "../data/autosMock";
 import { obtenerAutos } from "../utils/localStorage";
 import { agregarAFavoritos, obtenerFavoritos } from "../utils/favoritos";
-import { agregarAlCarrito, obtenerCarrito } from "../utils/carrito";
+import { auth } from "../firebase";
 
 export default function AutoDetalle() {
   const { id } = useParams();
@@ -11,26 +11,25 @@ export default function AutoDetalle() {
 
   const autosPublicados = obtenerAutos();
   const auto = [...autosMock, ...autosPublicados].find((a) => a.id === parseInt(id));
+  const usuario = auth.currentUser;
 
   const [esFavorito, setEsFavorito] = useState(false);
-  const [enCarrito, setEnCarrito] = useState(false);
+  const [yaReservado, setYaReservado] = useState(false);
 
   useEffect(() => {
     const favoritos = obtenerFavoritos();
     setEsFavorito(favoritos.some((a) => a.id === auto?.id));
 
-    const carrito = obtenerCarrito();
-    setEnCarrito(carrito.some((a) => a.id === auto?.id));
-  }, [auto?.id]);
+    const reservas = JSON.parse(localStorage.getItem("reservas") || "[]");
+    const match = reservas.find(
+      (r) => r.id === auto?.id && r.email === usuario?.email?.toLowerCase()
+    );
+    if (match) setYaReservado(true);
+  }, [auto?.id, usuario]);
 
   const handleFavorito = () => {
     agregarAFavoritos(auto);
     setEsFavorito(true);
-  };
-
-  const handleAgregarCarrito = () => {
-    agregarAlCarrito(auto);
-    setEnCarrito(true);
   };
 
   if (!auto) {
@@ -77,33 +76,31 @@ export default function AutoDetalle() {
         <li><strong>Kilómetros:</strong> {auto.kilometros.toLocaleString()} km</li>
       </ul>
 
-      <div className="flex flex-wrap items-center gap-3">
-        {!esFavorito ? (
-          <button
-            onClick={handleFavorito}
-            className="px-4 py-2 text-white bg-yellow-500 rounded hover:bg-yellow-600"
-          >
-            ⭐ Agregar a Favoritos
-          </button>
-        ) : (
-          <div className="font-semibold text-yellow-600">
-            ⭐ Ya está en tus favoritos
-          </div>
-        )}
+      {!esFavorito ? (
+        <button
+          onClick={handleFavorito}
+          className="px-4 py-2 mb-4 text-white bg-yellow-500 rounded hover:bg-yellow-600"
+        >
+          ⭐ Agregar a Favoritos
+        </button>
+      ) : (
+        <div className="mb-4 font-semibold text-yellow-600">
+          ⭐ Ya está en tus favoritos
+        </div>
+      )}
 
-        {!enCarrito ? (
-          <button
-            onClick={handleAgregarCarrito}
-            className="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700"
-          >
-            🛒 Agregar al Carrito
-          </button>
-        ) : (
-          <div className="font-semibold text-green-700">
-            🛒 Ya está en tu carrito
-          </div>
-        )}
-      </div>
+      {!yaReservado ? (
+        <button
+          onClick={() => navigate(`/reserva/${auto.id}`)}
+          className="w-full py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+        >
+          Reservar (pagar seña)
+        </button>
+      ) : (
+        <div className="mt-2 font-semibold text-center text-green-600">
+          ✅ Ya reservaste este auto
+        </div>
+      )}
     </div>
   );
 }
